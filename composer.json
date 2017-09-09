@@ -1,0 +1,36 @@
+{
+    "name": "votemike/internet-archive-api",
+    "description": "Library for Internet Archive API",
+    "keywords": [
+        "API",
+        "archive.org",
+        "Internet Archive",
+        "Library"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Michael Gwynne",
+            "email": "michael@votemike.co.uk"
+        }
+    ],
+    "require": {
+        "php": "^7.1",
+        "guzzlehttp/guzzle": "^6.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Votemike\\Archive\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Votemike\\Archive\\Test\\": "tests"
+        }
+    },
+    "prefer-stable": true,
+    "sort-packages": true
+}
