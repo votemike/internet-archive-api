@@ -69,18 +69,58 @@ class Api
 
     //@TODO should we pass in the identifier instead of an Item?
     //@TODO should this be separate to an Item?
-    public function getMetaDataForItem(Item $item): Item
+    public function getMetaDataForItem(Item $item, string $element = null): Item
     {
+        $url = 'metadata/' . $item->identifier;
+        if (null !== $element) {
+            $url .= '/' . $element;
+        }
+
         $response = $this->client->request(
             'GET',
-            'metadata/' . $item->identifier,//@TODO add limit for specific items
+            $url,
             [
                 'http_errors' => false
             ]
         );
 
-        if (200 == $response->getStatusCode()) {
-            $item = $this->addProperties($item, json_decode((string)$response->getBody()));
+        if (200 !== $response->getStatusCode()) {
+            return $item;
+        }
+
+        $result = json_decode((string)$response->getBody());
+        if (null === $element) {
+            return $this->addProperties($item, $result);
+        }
+
+        if (isset($result->error)) {
+            throw new Exception($result->error);
+        }
+
+        list($element) = explode('?', $element);
+        $bits = explode('/', $element);
+        if ($bits[0] === 'metadata') {
+            if (count($bits) === 1) {
+                $item->metadata = $this->createMetadata($result->result);
+            }
+            if (count($bits) === 2) {
+                $item->metadata = $this->createMetadata([$bits[1] => $result->result]);
+            }
+            if (count($bits) === 3) {
+                $item->metadata = $this->createMetadata([$bits[1] => [$result->result]]);
+            }
+        } else {
+            if (count($bits) === 1) {
+                $item->{$bits[0]} = $result->result;
+            }
+            if (count($bits) === 2) {
+                $item->{$bits[0]} = [$result->result];
+            }
+            if (count($bits) === 3) {
+                $thing = new stdClass();
+                $thing->{$bits[2]} = $result->result;
+                $item->{$bits[0]} = [$thing];
+            }
         }
 
         return $item;
@@ -93,18 +133,26 @@ class Api
 //                throw new Exception($key . ' does not appear to be part of an Item');
 //            }
             if ($key === 'metadata') {
-                $metadata = new MetaData();
-                foreach ($value as $metaDataKey => $metaDataValue) {
-//                    if (!property_exists($metadata, $metaDataKey)) {
-//                        throw new Exception($metaDataKey . ' does not appear to be part of an MetaData');
-//                    }
-                    $metadata->{$metaDataKey} = $metaDataValue;
-                }
-                $item->metadata = $metadata;
-            } else {
-                $item->{$key} = $value;
+                $value = $this->createMetadata($value);
             }
+            $item->{$key} = $value;
         }
         return $item;
+    }
+
+    /**
+     * @param stdClass|mixed[] $data
+     * @return MetaData
+     */
+    private function createMetadata($data)
+    {
+        $metadata = new MetaData();
+        foreach ($data as $metaDataKey => $metaDataValue) {
+//            if (!property_exists($metadata, $metaDataKey)) {
+//                throw new Exception($metaDataKey . ' does not appear to be part of an MetaData');
+//            }
+            $metadata->{$metaDataKey} = $metaDataValue;
+        }
+        return $metadata;
     }
 }

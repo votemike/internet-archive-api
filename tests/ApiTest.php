@@ -7,6 +7,8 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use PHPUnit_Framework_MockObject_MockObject;
+use Psr\Http\Message\ResponseInterface;
 use stdClass;
 use Votemike\Archive\Api;
 use Votemike\Archive\Item;
@@ -120,5 +122,191 @@ class ApiTest extends TestCase
         $response = $api->getMetaDataForItem($item);
         $this->assertInstanceOf(MetaData::class, $response->metadata);
         $this->assertEquals('runtime', $response->metadata->runtime);
+    }
+
+    public function testCallWithElementError()
+    {
+        $result = [
+            'error' => 'This is an error',
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $this->expectExceptionMessage('This is an error');
+        $api->getMetaDataForItem($item, 'element');
+    }
+
+    public function testCallWithElement()
+    {
+        $result = [
+            'result' => 2,
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'files_count');
+        $this->assertSame(2, $response->files_count);
+    }
+
+    public function testCallWithArrayElement()
+    {
+        $result = [
+            'result' => [
+                'filea',
+                'fileb',
+            ],
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'files');
+        $this->assertInternalType('array', $response->files);
+    }
+
+    public function testCallWithFirstArrayElement()
+    {
+        $result = [
+            'result' => 'filea',
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'files/0');
+        $this->assertInternalType('array', $response->files);
+        $this->assertSame('filea', $response->files[0]);
+    }
+
+    public function testCallWithElementFromFirstArrayElement()
+    {
+        $result = [
+            'result' => 'filea',
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'files/0/name');
+        $this->assertInternalType('array', $response->files);
+        $this->assertSame('filea', $response->files[0]->name);
+    }
+
+    public function testCallWithQueryStringForArrayElement()
+    {
+        $result = [
+            'result' => [
+                'filea',
+            ],
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'files?start=1&count=2');
+        $this->assertInternalType('array', $response->files);
+        $this->assertCount(1, $response->files);
+    }
+
+    public function testCallWithMetadataElement()
+    {
+        $result = [
+            'result' => [
+                'color' => 'color',
+                'collection' => [1, 2, 3],
+            ],
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'metadata');
+        $this->assertInstanceOf(MetaData::class, $response->metadata);
+        $this->assertInternalType('array', $response->metadata->collection);
+        $this->assertSame('color', $response->metadata->color);
+    }
+
+    public function testMetaDataCallWithElement()
+    {
+        $result = [
+            'result' => 'color',
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'metadata/color');
+        $this->assertInstanceOf(MetaData::class, $response->metadata);
+        $this->assertSame('color', $response->metadata->color);
+    }
+
+    public function testMetaDataCallWithElementFirstItemOfArray()
+    {
+        $result = [
+            'result' => '1',
+        ];
+        $mock = new MockHandler([
+            new Response(200, [], json_encode($result)),
+            new RequestException("Error Communicating with Server", new Request('GET', 'test'))
+        ]);
+
+        $handler = HandlerStack::create($mock);
+        $client = new Client(['handler' => $handler]);
+        $api = new Api($client);
+        $item = new Item();
+        $item->identifier = 'identifier';
+        $response = $api->getMetaDataForItem($item, 'metadata/collection/0');
+        $this->assertInstanceOf(MetaData::class, $response->metadata);
+        $this->assertSame('1', $response->metadata->collection[0]);
     }
 }

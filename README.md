@@ -30,8 +30,8 @@ Optional you can page in extra arguments:
 * Fields - By default, all fields are returned. Limit them by passing through an array of fields as mentioned on [advancedsearch page](https://archive.org/advancedsearch.php)
 * Sort - Send through an array of sort parameters
 
-If you would like a specific item populated with extra metadata, pass an `Item` object in to `$api->getMetaDataForItem()`.
-
+If you would like a specific item populated with extra metadata, pass an `Item` object in to `$api->getMetaDataForItem()`.  
+A second parameter can be added to only return [sub-items](http://blog.archive.org/2013/07/04/metadata-api/) of the metadata
 
 ## Credits
 
