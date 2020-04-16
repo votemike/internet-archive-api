@@ -35,7 +35,7 @@ A second parameter can be added to only return [sub-items](http://blog.archive.o
 
 ## Credits
 
-- [Michael Gwynne](http://www.votemike.co.uk)
+- [Michael Gwynne](https://votemike.co.uk)
 
 ## License
 
